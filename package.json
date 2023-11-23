@@ -4,7 +4,10 @@
   "version": "4.2.0",
   "description": "Next.Js & Typescript",
   "private": true,
+  "homepage": "https://luckpoohdev.github.io/luckpoohdev.github.io"
   "scripts": {
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build" 
     "dev": "next dev -p 8081",
     "start": "next start",
     "build": "next build",
