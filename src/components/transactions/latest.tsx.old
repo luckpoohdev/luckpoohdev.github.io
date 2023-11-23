@@ -1,0 +1,300 @@
+import { useState } from 'react';
+import sumBy from 'lodash/sumBy';
+// next
+import Head from 'next/head';
+// @mui
+import { useTheme } from '@mui/material/styles';
+import {
+  Tab,
+  Tabs,
+  Card,
+  Table,
+  Stack,
+  Button,
+  Tooltip,
+  Divider,
+  TableBody,
+  Container,
+  IconButton,
+  TableContainer,
+  CardHeader,
+} from '@mui/material';
+// routes
+import { PATH_APP } from '../../routes/paths';
+// _mock_
+import { _transactions } from '../../_mock/arrays';
+// @types
+import { IInvoice } from '../../@types/invoice';
+// layouts
+import DashboardLayout from '../../layouts/dashboard';
+// components
+import Label from '../label';
+import Iconify from '../iconify';
+import Scrollbar from '../scrollbar';
+import ConfirmDialog from '../confirm-dialog';
+import CustomBreadcrumbs from '../custom-breadcrumbs';
+import { useSettingsContext } from '../settings';
+import {
+  useTable,
+  getComparator,
+  emptyRows,
+  TableNoData,
+  TableEmptyRows,
+  TableHeadCustom,
+  TableSelectedAction,
+  TablePaginationCustom,
+} from '../table';
+// sections
+import { InvoiceTableRow, InvoiceTableToolbar } from '../../sections/@dashboard/invoice/list';
+import { TransactionTableRow } from 'src/sections/@dashboard/transactions/list';
+import useRouter from 'src/hooks/useRouter';
+import NextLink from 'src/components/custom-link'
+
+// ----------------------------------------------------------------------
+
+const TABLE_HEAD = [
+  { id: 'amount', label: 'Beløb', align: 'right' },
+  { id: 'fee', label: 'Gebyr', align: 'right' },
+  { id: 'dataSource', label: 'Datakilde', align: 'left' },
+  { id: 'paymentMethod', label: 'Betalingsform', align: 'left' },
+  { id: 'type', label: 'Type', align: 'center' },
+  { id: 'status', label: 'Status', align: 'center' },
+  { id: 'inBooks', label: 'Bogført', align: 'center' },
+  { id: 'processedAt', label: 'Processeret', align: 'left' },
+  { id: '' },
+];
+
+// ----------------------------------------------------------------------
+
+export const LatestTransactionsTable = () => {
+  const theme = useTheme();
+
+  const { themeStretch } = useSettingsContext();
+
+  const { push } = useRouter();
+
+  const {
+    dense,
+    page,
+    order,
+    orderBy,
+    rowsPerPage,
+    setPage,
+    //
+    selected,
+    setSelected,
+    onSelectRow,
+    onSelectAllRows,
+    //
+    onSort,
+    onChangeDense,
+    onChangePage,
+    onChangeRowsPerPage,
+  } = useTable({ defaultOrderBy: 'createDate' });
+
+  const [tableData, setTableData] = useState(_transactions);
+
+  const [openConfirm, setOpenConfirm] = useState(false);
+
+  const [filterStatus, setFilterStatus] = useState('payout');
+
+  const dataFiltered = applyFilter({
+    inputData: tableData,
+    comparator: getComparator(order, orderBy),
+    filterStatus,
+  });
+
+  const dataInPage = dataFiltered.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+
+  const denseHeight = dense ? 56 : 76;
+
+  const isFiltered = true
+
+  const isNotFound = !dataFiltered.length && !!filterStatus
+
+
+  const TABS = [
+    { value: 'payout', label: 'Udbetalinger' },
+    { value: 'transaction', label: 'Hævninger' },
+    { value: 'authorization', label: 'Autoriseringer' },
+    { value: 'refund', label: 'Refunderinger' },
+    { value: 'error', label: 'Fejlende' },
+    { value: 'abandonment', label: 'Forladte' },
+  ] as const;
+
+  const handleOpenConfirm = () => {
+    setOpenConfirm(true);
+  };
+
+  const handleCloseConfirm = () => {
+    setOpenConfirm(false);
+  };
+
+  const handleFilterStatus = (event: React.SyntheticEvent<Element, Event>, newValue: string) => {
+    setPage(0);
+    setFilterStatus(newValue);
+  };
+
+  const handleDeleteRow = (id: string) => {
+    const deleteRow = tableData.filter((row) => row.id !== id);
+    setSelected([]);
+    setTableData(deleteRow);
+
+    if (page > 0) {
+      if (dataInPage.length < 2) {
+        setPage(page - 1);
+      }
+    }
+  };
+
+  const handleViewRow = (id: string) => {
+    push(PATH_APP.payments.transactions.view(id));
+  };
+
+  const handleResetFilter = () => {
+    setFilterStatus('payout');
+  };
+
+  return (
+    <>
+      <Tabs
+        value={filterStatus}
+        onChange={handleFilterStatus}
+        sx={{
+          px: 2,
+          bgcolor: 'background.neutral',
+        }}
+      >
+        {TABS.map((tab) => (
+          <Tab
+            key={tab.value}
+            value={tab.value}
+            label={tab.label}
+          />
+        ))}
+      </Tabs>
+
+      <Divider />
+
+      <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
+        <TableSelectedAction
+          dense={dense}
+          numSelected={selected.length}
+          rowCount={tableData.length}
+          onSelectAllRows={(checked) =>
+            onSelectAllRows(
+              checked,
+              tableData.map((row) => row.id)
+            )
+          }
+          action={
+            <Stack direction="row">
+              <Tooltip title="Sent">
+                <IconButton color="primary">
+                  <Iconify icon="ic:round-send" />
+                </IconButton>
+              </Tooltip>
+
+              <Tooltip title="Download">
+                <IconButton color="primary">
+                  <Iconify icon="eva:download-outline" />
+                </IconButton>
+              </Tooltip>
+
+              <Tooltip title="Print">
+                <IconButton color="primary">
+                  <Iconify icon="eva:printer-fill" />
+                </IconButton>
+              </Tooltip>
+
+              <Tooltip title="Delete">
+                <IconButton color="primary" onClick={handleOpenConfirm}>
+                  <Iconify icon="eva:trash-2-outline" />
+                </IconButton>
+              </Tooltip>
+            </Stack>
+          }
+        />
+
+        <Scrollbar>
+          <Table size="medium" sx={{ minWidth: 800 }}>
+            <TableHeadCustom
+              order={order}
+              orderBy={orderBy}
+              headLabel={TABLE_HEAD}
+              rowCount={tableData.length}
+              numSelected={selected.length}
+              onSort={onSort}
+              onSelectAllRows={(checked) =>
+                onSelectAllRows(
+                  checked,
+                  tableData.map((row) => row.id)
+                )
+              }
+            />
+
+            <TableBody>
+              {dataFiltered
+                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                .map((row) => (
+                  <TransactionTableRow
+                    key={row.id}
+                    row={row}
+                    selected={selected.includes(row.id)}
+                    onSelectRow={() => onSelectRow(row.id)}
+                    onViewRow={() => handleViewRow(row.id)}
+                    onDeleteRow={() => handleDeleteRow(row.id)}
+                  />
+                ))}
+
+              <TableNoData isNotFound={isNotFound} />
+            </TableBody>
+          </Table>
+        </Scrollbar>
+      </TableContainer>
+    </>
+  )
+}
+
+const LatestTransactions = () => {
+  const router = useRouter()
+  return (
+    <Card>
+      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ p: 2.5 }}>
+        <CardHeader title="Seneste transaktioner" sx={{ p: 0 }} />
+        <Button onClick={() => router.push(PATH_APP.payments.transactions.root)}>Se alle</Button>
+      </Stack>
+      <LatestTransactionsTable />
+    </Card>
+  )
+}
+
+// ----------------------------------------------------------------------
+
+function applyFilter({
+  inputData,
+  comparator,
+  filterStatus,
+}: {
+  inputData: IInvoice[];
+  comparator: (a: any, b: any) => number;
+  filterStatus: string;
+}) {
+  const stabilizedThis = inputData.map((el, index) => [el, index] as const);
+
+  stabilizedThis.sort((a, b) => {
+    const order = comparator(a[0], b[0]);
+    if (order !== 0) return order;
+    return a[1] - b[1];
+  });
+
+  inputData = stabilizedThis.map((el) => el[0]);
+
+  inputData = inputData.filter((transaction) => transaction.type === filterStatus);
+
+  return inputData;
+}
+
+// ----------------------------------------------------------------------
+
+export default LatestTransactions

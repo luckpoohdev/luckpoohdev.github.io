@@ -1,0 +1,55 @@
+{
+  "name": "da",
+  "options": {
+    "months": [
+      "Januar",
+      "Februar",
+      "Marts",
+      "April",
+      "Maj",
+      "Juni",
+      "Juli",
+      "August",
+      "September",
+      "Oktober",
+      "November",
+      "December"
+    ],
+    "shortMonths": [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "Maj",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Okt",
+      "Nov",
+      "Dec"
+    ],
+    "days": [
+      "Søndag",
+      "Mandag",
+      "Tirsdag",
+      "Onsdag",
+      "Torsdag",
+      "Fredag",
+      "Lørdag"
+    ],
+    "shortDays": ["Søn", "Man", "Tir", "Ons", "Tor", "Fri", "Lør"],
+    "toolbar": {
+      "exportToSVG": "Hent SVG",
+      "exportToPNG": "Hent PNG",
+      "exportToCSV": "Hent CSV",
+      "menu": "Menu",
+      "selection": "Valg",
+      "selectionZoom": "Zoom til Valg",
+      "zoomIn": "Zoom Ind",
+      "zoomOut": "Zoom Ud",
+      "pan": "Flyt",
+      "reset": "Nulstil Zoom"
+    }
+  }
+}
